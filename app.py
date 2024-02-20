@@ -50,8 +50,10 @@ def manage_access():
         access_type = choice(access_types)
         name = data.get("name")
         server_ip = data.get("server_ip")
-        message = f"User {name} received {access_type} \
-                    access to server {server_ip}"
+        message = (
+            f"User {name} received {access_type} "
+            f"access to server {server_ip}"
+        )
         return jsonify({"Message": message})
     if request.method == 'DELETE':
         if data in access_list:
