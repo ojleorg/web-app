@@ -36,7 +36,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: localhost
-          ECR_REPOSITORY: test-app
+          ECR_REPOSITORY: web-app
           IMAGE_TAG: ${{ steps.create-release-tag.outputs.tag_name }}
           DOCKER_BUILDKIT: 1
         run: |
