@@ -25,10 +25,10 @@ Important tools used for this service are as follows:
 #### To run the Flask webapp locally with Docker:
 
 1. Build the docker image providing target 'app'  
-    `$ docker build --target app -t test-app:latest .`
+    `$ docker build --target app -t web-app:latest .`
 
 1. Run the latest image id providing env-file and bind port 5000  
-    `$ docker run --env-file=./dotenv/.env.local -dp 5000:5000 test-app:latest`
+    `$ docker run --env-file=./dotenv/.env.local -dp 5000:5000 web-app:latest`
 
 #### To run the Flask webapp locally with Python 3.6 in virtualenv:
 
