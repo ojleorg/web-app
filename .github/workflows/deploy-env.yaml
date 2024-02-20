@@ -1,0 +1,32 @@
+name: Deploy to env
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        required: true
+        description: 'Environment to deploy'
+        options: 
+        - demo
+        - test
+      release:
+        description: 'Release version (eg. rel-9)'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.env }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        run: |
+          echo "aws-actions/configure-aws-credentials@v1"
+      - name: Deploy to ${{ inputs.env }}
+        uses: ./.github/workflows/deploy-env/composite
+        with:
+          env: "${{ inputs.env }}"
+          image_tag: "${{ inputs.release }}"

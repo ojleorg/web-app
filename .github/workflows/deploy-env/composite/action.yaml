@@ -1,0 +1,50 @@
+inputs:
+  env:
+    description: 'Environment name'
+  image_tag:
+    description: 'Image tag'
+runs:
+  using: "composite"
+  steps:
+    - name: set env
+      run: |
+        echo "ECS_TASK_DEFINITION=test-app-${{ inputs.env }}" >> $GITHUB_ENV
+        echo "ECS_CONTAINER_NAME=test-app-${{ inputs.env }}" >> $GITHUB_ENV
+        echo "ECS_SERVICE=test-app-${{ inputs.env }}-service" >> $GITHUB_ENV
+        echo "ECS_CLUSTER=test-app-${{ inputs.env }}-cluster" >> $GITHUB_ENV
+        echo "ECS_TASK_DEFINITION_FILENAME=test-app-task-definition.json" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Download task definition
+      shell: bash
+      run: |
+        echo "aws ecs describe-task-definition --task-definition ${{env.ECS_TASK_DEFINITION}} --query taskDefinition > ${{env.ECS_TASK_DEFINITION_FILENAME}}"
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      shell: bash
+      run: |
+        echo "aws-actions/amazon-ecs-render-task-definition@v1"
+        echo "task-definition: ${{env.ECS_TASK_DEFINITION_FILENAME}}"
+        echo "container-name: ${{env.ECS_CONTAINER_NAME}}"
+        echo "image: ${{ inputs.image_tag }}"
+
+    - name: Deploy Amazon ECS task definition
+      shell: bash
+      run: |
+        echo "aws-actions/amazon-ecs-deploy-task-definition@v1"
+        echo "task-definition: ${{ steps.task-def.outputs.task-definition }}"
+
+    - name: Copy env file to S3 bucket
+      shell: bash
+      run: |
+        echo "aws s3 cp dotenv/.env.${{ inputs.env }} s3://config.test-app.com/"
+
+    - name: Update ECS service
+      shell: bash
+      run: echo "aws ecs update-service --service ${{env.ECS_SERVICE}} --cluster ${{env.ECS_CLUSTER}} --task-definition ${{env.ECS_TASK_DEFINITION}} --force-new-deployment"
+
+    - name: Wait for ECS to be ready
+      shell: bash
+      run: |
+        echo "aws ecs wait services-stable --service ${{env.ECS_SERVICE}} --cluster ${{env.ECS_CLUSTER}}"

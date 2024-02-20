@@ -1,0 +1,79 @@
+name: Deploy to staging
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: 'write'
+  id-token: 'write'
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-20.04
+    outputs:
+      image_tag: ${{ steps.build-image.outputs.image }}
+      tag_name: ${{ steps.create-release-tag.outputs.tag_name }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        run: |
+          echo "aws-actions/configure-aws-credentials@v1"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: echo "aws-actions/amazon-ecr-login@v1"
+
+      - name: Create Release Tag
+        id: create-release-tag
+        run: echo "tag_name=rel-${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Build, tag and push image
+        id: build-image
+        env:
+          ECR_REGISTRY: localhost
+          ECR_REPOSITORY: test-app
+          IMAGE_TAG: ${{ steps.create-release-tag.outputs.tag_name }}
+          DOCKER_BUILDKIT: 1
+        run: |
+          echo "docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          echo "docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $ECR_REGISTRY/$ECR_REPOSITORY:latest -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ."
+          echo "docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          echo "docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        run: |
+          echo "aws-actions/configure-aws-credentials@v1"
+      - name: Deploy to staging
+        uses: ./.github/workflows/deploy-env/composite
+        with:
+          env: "staging"
+          image_tag: "${{ needs.build.outputs.image_tag }}"
+
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-20.04
+    needs: [build,deploy]
+    steps:
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.build.outputs.tag_name }}
+          name: Release ${{ needs.build.outputs.tag_name }}
+          generate_release_notes: true
+          draft: true

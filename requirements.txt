@@ -1,0 +1,6 @@
+Flask==2.0.3
+uWSGI==2.0.19
+pytest
+python-dotenv
+flake8==3.6.0
+flask_swagger_ui

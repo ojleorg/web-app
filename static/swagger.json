@@ -1,0 +1,91 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "Access API",
+    },
+    "paths": {
+      "/access": {
+        "get": {
+          "description": "Returns list of all current user accesses",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful operation"
+            }
+          }
+        },
+        "post": {
+          "description": "Grants access to an user",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "access data",
+              "in": "body",
+              "description": "JSON data for the api",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/AccessData"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User granted access"
+            },
+            "400": {
+              "description": "Invalid request data"
+            }
+          }
+        },
+        "delete": {
+          "description": "Revoke access to an user",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "access data",
+              "in": "body",
+              "description": "JSON data for the api",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/AccessData"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User access revoked"
+            },
+            "400": {
+              "description": "Invalid request data"
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "AccessData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "server_ip": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+  
