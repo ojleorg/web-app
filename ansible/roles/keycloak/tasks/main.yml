@@ -31,7 +31,7 @@
     realm: webapp
     client_id: js-client
     redirect_uris:
-      - http://{{ansible_host}}:8090/*
+      - http://{{ansible_host}}/*
     web_origins:
       - '*' 
     state: present
