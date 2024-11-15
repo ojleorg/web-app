@@ -1,0 +1,46 @@
+// Keycloak configuration
+const keycloak = new Keycloak({
+  url: 'http://{{ ansible_host }}:8080',
+    realm: 'webapp',
+    clientId: 'js-client'
+});
+
+const loginButton = document.getElementById('loginButton');
+const logoutButton = document.getElementById('logoutButton');
+const welcomeMessage = document.getElementById('welcomeMessage');
+
+// Initialize Keycloak
+keycloak.init({ onLoad: 'login-required', pkceMethod: 'S256' })
+    .then(authenticated => {
+        if (authenticated) {
+            onLoginSuccess();
+        } else {
+            console.log("User is not authenticated");
+        }
+    })
+    .catch(error => console.error("Failed to initialize Keycloak:", error));
+
+// Login handler
+loginButton.onclick = () => keycloak.login();
+
+// Logout handler
+logoutButton.onclick = () => {
+    keycloak.logout();
+    onLogoutSuccess();
+};
+
+// After successful login
+function onLoginSuccess() {
+    loginButton.style.display = 'none';
+    logoutButton.style.display = 'block';
+    welcomeMessage.textContent = `Hello, ${keycloak.tokenParsed?.preferred_username}!`;
+    console.log("User info:", keycloak.tokenParsed);
+}
+
+// After logout
+function onLogoutSuccess() {
+    loginButton.style.display = 'block';
+    logoutButton.style.display = 'none';
+    welcomeMessage.textContent = '';
+}
+

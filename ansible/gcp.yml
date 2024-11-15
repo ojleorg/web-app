@@ -1,0 +1,15 @@
+plugin: google.cloud.gcp_compute
+projects:
+  - devops-364112
+auth_kind: serviceaccount
+regions:
+  - europe-west3
+filters:
+  - status = RUNNING
+keyed_groups:
+  - key: labels.app
+    prefix: gcp
+hostnames:
+  - name
+compose:
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP

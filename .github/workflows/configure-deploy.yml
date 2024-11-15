@@ -1,0 +1,38 @@
+name: Configure and Deploy Services
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GCP_SERVICE_ACCOUNT_FILE: '/home/runner/svc.json'
+  KEYCLOAK_PASSWORD: ${{ secrets.KEYCLOAK_PASSWORD }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  WEBAPP_PASSWORD: ${{ secrets.WEBAPP_PASSWORD }}
+  SSH_KEY: ${{ secrets.SSH_KEY }}
+
+jobs:
+  prepare:
+    name: Ansible provisioning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup ansible requirements
+        run: |
+          /opt/pipx/venvs/ansible-core/bin/python -m pip install google-auth
+          /opt/pipx/venvs/ansible-core/bin/python -m pip install requests
+      - name: Setup cloud credentials
+        uses: ./.github/workflows/cloud-credentials
+        with:
+          gcp_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Run ansible
+        run: |
+          mkdir -p ~/.ssh/
+          chmod 0700 ~/.ssh
+          eval $(ssh-agent -s)
+          ssh-add <(echo "$SSH_KEY")
+          ansible-playbook -i gcp.yml demo.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+        working-directory: ansible

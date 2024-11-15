@@ -1,0 +1,56 @@
+- name: Reconfig master realm
+  community.docker.docker_container_exec:
+    container: webapp-keycloak-1
+    command: bash -c 'cd /opt/keycloak; ./bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password {{ keycloak_password }} && ./bin/kcadm.sh update realms/master -s sslRequired=NONE --server http://localhost:8080'
+  register: result
+  changed_when: "result.rc != 0"
+
+- name: Check master realm reconfig status
+  ansible.builtin.debug:
+    var: result
+
+- name: Create or update Keycloak realm (minimal example)
+  community.general.keycloak_realm:
+    auth_keycloak_url: http://{{ansible_host}}:8080
+    auth_realm: master
+    auth_username: admin
+    auth_password: "{{ keycloak_password }}"
+    id: webapp
+    realm: webapp
+    registration_allowed: false
+    ssl_required: none
+    enabled: true
+    state: present
+
+- name: Create or update Keycloak client (minimal example), authentication with credentials
+  community.general.keycloak_client:
+    auth_keycloak_url: http://{{ansible_host}}:8080
+    auth_username: admin
+    auth_password: "{{ keycloak_password }}"
+    auth_realm: master 
+    realm: webapp
+    client_id: js-client
+    redirect_uris:
+      - http://{{ansible_host}}:8090/*
+    web_origins:
+      - '*' 
+    state: present
+
+- name: Create a user
+  community.general.keycloak_user:
+    auth_keycloak_url: http://{{ansible_host}}:8080
+    auth_username: admin
+    auth_password: "{{ keycloak_password }}"
+    auth_realm: master 
+    realm: webapp
+    username: "{{ webapp_user }}"
+    email: "{{ webapp_user }}@localhost"
+    firstName: "{{ webapp_user }}"
+    lastName: "{{ webapp_user }}"
+    enabled: true
+    emailVerified: false
+    credentials:
+        - type: password
+          value: "{{ webapp_password }}"
+          temporary: false
+    state: present

@@ -1,0 +1,14 @@
+---
+- hosts: gcp_webapp
+  become: true
+  vars:
+    keycloak_password: "{{ lookup('env','KEYCLOAK_PASSWORD') }}"
+    webapp_user: user1
+    webapp_password: "{{ lookup('env','WEBAPP_PASSWORD') }}"
+    postgres_password: "{{ lookup('env','POSTGRES_PASSWORD') }}"
+    ansible_user: webappuser
+    ansible_ssh_private_key: "{{ lookup('env','TF_VAR_ssh_key') }}"
+  roles:
+    - docker
+    - services
+    - keycloak 

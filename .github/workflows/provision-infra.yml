@@ -1,0 +1,56 @@
+name: Infra provisioning
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action'
+        required: true
+        default: 'create'
+        type: choice
+        options:
+          - create
+          - destroy
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GOOGLE_APPLICATION_CREDENTIALS: '/home/runner/svc.json'
+  TF_VAR_ssh_key: ${{ secrets.SSH_PUB_KEY }}
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup cloud credentials
+        uses: ./.github/workflows/cloud-credentials
+        with:
+          gcp_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Check action
+        id: set_input
+        run: |
+          if [ ${{ inputs.action }} == "destroy" ]; then
+            echo 'TF_ARGS=-destroy' >> $GITHUB_ENV
+          fi
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        run: terraform plan ${{env.TF_ARGS}} -no-color
+        continue-on-error: true
+
+      - name: Terraform Apply
+        run: |
+          terraform apply ${{env.TF_ARGS}} -auto-approve

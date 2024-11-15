@@ -1,0 +1,16 @@
+---
+- include_tasks: install.yml
+
+- name: Start docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Collect facts about system services
+  service_facts:
+
+- name: Check if Docker service failed startup
+  ansible.builtin.fail:
+    msg: Docker start failed
+  when: ansible_facts.services["docker.service"].state != "running"

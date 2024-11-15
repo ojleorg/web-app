@@ -1,0 +1,40 @@
+- name: Create dir
+  ansible.builtin.file:
+    path: /opt/webapp/app
+    state: directory
+    recurse: true
+- name: Copy webapp js 
+  template:
+    src: app.js.j2
+    dest: /opt/webapp/app/app.js
+- name: Copy index
+  copy:
+    src: index.html
+    dest: /opt/webapp/app/index.html
+- name: Copy docker compose
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/webapp/docker-compose.yml
+- name: Teardown Docker compose
+  community.docker.docker_compose_v2:
+    project_src: /opt/webapp
+    files:
+      - docker-compose.yml
+    state: absent 
+- name: Start Docker compose
+  community.docker.docker_compose_v2:
+    project_src: /opt/webapp
+    files:
+      - docker-compose.yml
+    state: present
+- name: Wait until Keycloak HTTP status is 200
+  uri:
+    url: 'http://{{ansible_host}}:9000/health/ready'
+    return_content: yes
+    validate_certs: no
+    status_code:
+      - 200
+  until: uri_output.status == 200
+  retries: 20 
+  delay: 12 
+  register: uri_output

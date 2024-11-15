@@ -1,0 +1,7 @@
+- name: RedHat - Install Docker
+  include_tasks: install-redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Ubuntu - Install Docker
+  include_tasks: install-ubuntu.yml
+  when: ansible_os_family == "Debian" and ansible_distribution == "Ubuntu"

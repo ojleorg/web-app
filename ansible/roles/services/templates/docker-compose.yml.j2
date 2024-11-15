@@ -1,0 +1,56 @@
+services:
+
+  ####
+  # Web services
+  ####
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - 80:80
+    volumes:
+      - ./app/:/usr/share/nginx/html
+
+  ####
+  # Infra services
+  ####
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    depends_on: 
+      postgres:
+        condition: service_healthy
+        restart: true
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD={{ keycloak_password }}
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=postgres
+      - KC_DB_URL_DATABASE=postgres
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD={{ postgres_password }}
+      - KC_HTTP_ENABLED=true
+      - KC_HTTPS_ENABLED=false
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_HEALTH_ENABLED=true
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+  postgres:
+    image: postgres:14-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD={{ postgres_password }}
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres

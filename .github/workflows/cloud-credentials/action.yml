@@ -1,0 +1,14 @@
+name: 'Cloud credentials'
+description: 'Configures cloud credentials'
+inputs:
+  gcp_service_account_key:
+    description: "svc key"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Configure credentials
+      shell: bash
+      run: |
+        echo "${{ inputs.gcp_service_account_key }}" > /home/runner/svc_enc.json
+        cat /home/runner/svc_enc.json | base64 -d > /home/runner/svc.json
